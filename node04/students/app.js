@@ -1,5 +1,4 @@
 
-
 const http = require('http');
 
 const url = require('url');
@@ -89,6 +88,72 @@ server.on('request',( req, res) => {
 
 //*********************************************************
 		
+					/*取出编辑数据*/
+
+			case '/edit':
+			//query.key是get传的参数(索引值),根据索引取数据
+			let sts = students[query.key];
+			// console.log(sts)
+			sts.action = '/update?key=' + query.key;
+			//渲染模板
+			res.render('add',sts);
+			break;
+
+//*********************************************************	
+
+				/*更新编辑的内容*/
+
+			case '/update':
+
+			req.body = '';
+			req.on('data',(chunk) => {
+				req.body += chunk;
+			});
+
+			req.on('end',() => {
+
+				let formData = querystring.parse(req.body);
+
+				//需要到数组里找到原数据,并替换
+				students.splice(query.key, 1, formData);
+
+				fs.open('./database/students.json', 'w', (err, fd) => {
+					if(err) {
+						return res.end('错误');
+					}
+
+					fs.write(fd, JSON.stringify(students));
+
+					res.writeHeader(302, {
+						Location:'/list'
+					});
+					res.end();
+				})
+			});
+			break;
+
+//*********************************************************
+
+				/*删除数据*/
+		case '/del' :
+
+		//根据索引值将数据从数组删除
+		students.splice(query.key, 1);
+
+		fs.open('./database/students.json', 'w', (err,fd) => {
+			if(err) {
+				return res.end('错误');
+			}
+
+			fs.write(fd, JSON.stringify(students));
+
+			res.writeHeader(302, {
+				Location:'/list'
+			});
+			res.end();
+		})
+		break;
+
 //*********************************************************
 		       /*响应静态资源*/
 		   default:
@@ -98,8 +163,9 @@ server.on('request',( req, res) => {
 		   		};
 
 		   		res.writeHeader(200,{'Content-Type':mime.lookup(pathname)});
-		   		res.end();
+		   		res.end(file);
 		   		console.log(pathname);
+		   		console.log(path.join('public',pathname));
 		   })
 
 	}
